@@ -31,8 +31,8 @@ def get_last_case_date():
 
 def get_yesterday():
     """Return the date of yesterday"""
-    today = datetime.now(pytz.timezone("Asia/Taipei"))
-    return today.replace(tzinfo=None) - timedelta(days=1)
+    today = datetime.now(pytz.timezone("Asia/Taipei")) - timedelta(days=1)
+    return today.astimezone(pytz.utc).replace(hour=16, minute=0, second=0, microsecond=0, tzinfo=None)
 
 
 def fetch_case_data(case_date=None, page=1):
