@@ -88,7 +88,7 @@ def fetch_fraud_cases(date=None):
         current_date = start_date
         if current_date <= end_date:
             with open(CSV_FILENAME, mode='a', newline='', encoding='utf-8-sig') as file:
-                csv_writer = csv.DictWriter(file, fieldnames=['Id', 'CaseDate', 'CityName', 'CityId', 'Summary', 'CaseTitle'])
+                csv_writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
             
                 while current_date <= end_date:
                     print("------")

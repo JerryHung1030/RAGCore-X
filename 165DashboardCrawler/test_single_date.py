@@ -1,9 +1,7 @@
-import requests
-import os
 import csv
-from datetime import datetime, timedelta
+import datetime
 import pytz
-import pandas as pd
+import requests
 import time
 
 
@@ -46,7 +44,7 @@ def fetch_fraud_cases(date=None):
     data = fetch_case_data(current_date)    
     if data:
         with open(CSV_FILENAME, mode='a', newline='', encoding='utf-8-sig') as file:
-            csv_writer = csv.DictWriter(file, fieldnames=['Id', 'CaseDate', 'CityName', 'CityId', 'Summary', 'CaseTitle'])
+            csv_writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
             body = data.get("body", {})
             total_pages = body.get("TotalPages", 0)
             print("Total pages: ", total_pages)
