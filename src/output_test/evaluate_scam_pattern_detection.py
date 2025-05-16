@@ -115,7 +115,7 @@ def add_single_quote_prefix(codes):
 
 
 def main():
-    xls = pd.ExcelFile('input_data_c90_k10.xlsx', engine='openpyxl')
+    xls = pd.ExcelFile('input_data_c70_k10.xlsx', engine='openpyxl')
 
     # 假設我們只處理 dif_between_4o_&_answer 這張表
     diff_df = pd.read_excel(xls, 'dif_between_4o_&_answer', engine='openpyxl')

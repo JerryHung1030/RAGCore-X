@@ -64,24 +64,24 @@ def build_matrix(forward_results: list, reverse_results: list):
     matrix = np.zeros((len(ext_keys), len(int_keys)), dtype=np.int8)
 
     # =========== 填入 外->內 =========== #
-    # 只要 forward 的 evidences 裡帶有 doc_id (對應某個 internal), 就將 matrix[ext_id, int_id] 標記為 1 (或 1|=).
+    # 只要 forward 的 evidences 裡帶有 chunk_id (對應某個 internal), 就將 matrix[ext_id, int_id] 標記為 1 (或 1|=).
     for f_item in forward_results:
         ext_id = f_item["law_clause_id"]
         row_idx = ext_keys.index(ext_id)  # 取得外部法規 row index
         evidences = f_item.get("evidences", [])
-        # 為了避免重複加多次(若同 doc_id 有多條 evidence),
-        # 可以先收集本 iter 內 doc_id set
-        doc_ids_hit = set()
+        # 為了避免重複加多次(若同 chunk_id 有多條 evidence),
+        # 可以先收集本 iter 內 chunk_id set
+        chunk_ids_hit = set()
         for ev in evidences:
-            int_id = ev.get("doc_id")  # ex. "CSTI-1-SEC-001-5"
+            int_id = ev.get("chunk_id")  # ex. "CSTI-1-SEC-001-5"
             if not int_id:
                 continue
             if int_id not in int_keys:
                 continue
-            if int_id in doc_ids_hit:
-                # 同一 doc_id已經標記過, 不要再+1
+            if int_id in chunk_ids_hit:
+                # 同一 chunk_id已經標記過, 不要再+1
                 continue
-            doc_ids_hit.add(int_id)
+            chunk_ids_hit.add(int_id)
 
             col_idx = int_keys.index(int_id)
             # 原本 matrix[row_idx, col_idx] 可能是0或2(代表之前內->外)
@@ -95,17 +95,17 @@ def build_matrix(forward_results: list, reverse_results: list):
         int_id = r_item["internal_clause_id"]
         col_idx = int_keys.index(int_id)  # 取得 internal row index
         evidences = r_item.get("evidences", [])
-        doc_ids_hit = set()
+        chunk_ids_hit = set()
         for ev in evidences:
-            ext_id = ev.get("doc_id")  # ex. "CSMA-18"
+            ext_id = ev.get("chunk_id")  # ex. "CSMA-18"
             if not ext_id:
                 continue
             if ext_id not in ext_keys:
                 continue
-            if ext_id in doc_ids_hit:
-                # 同一 doc_id已經標記過, 不要再+2
+            if ext_id in chunk_ids_hit:
+                # 同一 chunk_id已經標記過, 不要再+2
                 continue
-            doc_ids_hit.add(ext_id)
+            chunk_ids_hit.add(ext_id)
 
             row_idx = ext_keys.index(ext_id)
             prev_val = matrix[row_idx, col_idx]

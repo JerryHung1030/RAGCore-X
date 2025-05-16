@@ -38,16 +38,16 @@ class ComplianceRAGService(BaseRAGService):
         )
 
     def build_prompt(self, user_query: str, context_docs: List[dict]) -> str:
-        # context_docs = [{"doc_id":"CSTI-01","text":"本會...", "score":0.88}, ...]
+        # context_docs = [{"chunk_id":"CSTI-01","text":"本會...", "score":0.88}, ...]
         lines = []
         for i, doc in enumerate(context_docs, start=1):
-            lines.append(f"[Internal Doc#{i}] doc_id={doc['doc_id']} sim={doc['score']:.3f}\n{doc['text']}\n")
+            lines.append(f"[Internal Doc#{i}] chunk_id={doc['chunk_id']} sim={doc['score']:.3f}\n{doc['text']}\n")
         docs_str = "\n".join(lines)
 
         example_json = """
         [
         {
-            "doc_id": "CSTI-1-SEC-001-3",
+            "chunk_id": "CSTI-1-SEC-001-3",
             "code": "CSMA-3",
             "label": "CSTI-1-SEC-001-3: 人員定義",
             "evidence": "本會於業務範...",
@@ -62,9 +62,42 @@ class ComplianceRAGService(BaseRAGService):
             f"{self.prompt_header}\n"
             f"外部法規條文:\n{user_query}\n\n"
             f"--- 檢索到的內部文件 ---\n{docs_str}\n\n"
-            "請進行比對，並在回傳的JSON中，一定要包含 doc_id 以對應相似度.\n"
+            "請進行比對，並在回傳的JSON中，一定要包含 chunk_id 以對應相似度.需注意evidence欄位必須完全依照原文不可隨意修改或省略.\n"
             f"範例:{example_json}\n"
         )
+        
+    def post_process(
+        self,
+        user_query: str,
+        raw_json: list[dict],
+        hits: List[dict]
+    ) -> list[dict]:
+        ev_key = self.cfg["evidence_key"]
+        s_key, e_key = self.cfg["start_idx_key"], self.cfg["end_idx_key"]
+
+        for rec in raw_json:
+            chunk_id_from_llm = rec.get("chunk_id", "")
+            match_doc = next((h for h in hits if h["chunk_id"] == chunk_id_from_llm), None)
+
+            if match_doc:
+                rec["similarity_score"] = match_doc["score"]
+                doc_text = match_doc["text"]
+            else:
+                rec["similarity_score"] = 0.0
+                doc_text = ""
+
+            evidence_txt = rec.get(ev_key, "")
+            if evidence_txt:
+                start_idx = doc_text.find(evidence_txt)
+                end_idx = start_idx + len(evidence_txt) if start_idx != -1 else -1
+            else:
+                start_idx = -1
+                end_idx = -1
+
+            rec[s_key], rec[e_key] = start_idx, end_idx
+
+        return raw_json
+
 
 
 class LawComplianceService:

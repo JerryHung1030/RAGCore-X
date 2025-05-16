@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class VectorStoreManager:
     """
     使用 LangChain + Qdrant 來管理向量資料庫。
-    重點：search_similar_with_score() 回傳 List[dict], 每個dict包含 doc_id, text, score
+    重點：search_similar_with_score() 回傳 List[dict], 每個dict包含 uid, text, score
     """
     def __init__(
         self,
@@ -39,16 +39,16 @@ class VectorStoreManager:
 
     def add_documents(self, domain: str, docs: List[Any], metadata: Dict):
         """
-        以前用在詐騙模式, item = {"code","category","desc"}
+        以前用在詐騙模式, item = {"uid","category","desc"}
         """
         logger.debug(f"add_documents domain={domain}, count={len(docs)}")
         doc_list = []
         for idx, item in enumerate(docs):
-            label_str = f"{item['code']}{item['category']}:{item['desc']}"
+            label_str = f"{item['uid']}{item['category']}:{item['desc']}"
             merged_meta = dict(metadata)
             merged_meta["domain"] = domain
-            merged_meta["doc_id"] = item.get("code", f"{domain}-{idx}")
-            merged_meta["code"] = item["code"]
+            # merged_meta["uid"] = item.get("uid", f"{domain}-{idx}")
+            merged_meta["uid"] = item["uid"]
             merged_meta["category"] = item["category"]
             merged_meta["desc"] = item["desc"]
 
@@ -75,17 +75,17 @@ class VectorStoreManager:
     ):
         """
         將任意 jsonl 帶進 Qdrant.
-        會給每段產生 doc_id, 也可從 item["clause_id"] 來設定 doc_id.
+        會給每段產生 uid, 也可從 item["clause_id"] 來設定 uid.
         """
         if not json_lines:
             return
         docs = []
         for idx, item in enumerate(json_lines):
             para = item[text_key]
-            doc_id = item.get("clause_id", f"{domain}-{idx}")
+            # uid = item.get("clause_id", f"{domain}-{idx}")
             meta = {k: item.get(k, "") for k in (meta_keys or [])}
             meta["domain"] = domain
-            meta["doc_id"] = doc_id
+            # meta["uid"] = uid
             docs.append(Document(page_content=para, metadata=meta))
 
         if not docs:
@@ -108,7 +108,7 @@ class VectorStoreManager:
         filters: Dict[str, Any] | None = None
     ) -> List[dict]:
         """
-        回傳 List[dict], 每個 dict = {"doc_id":..., "text":..., "score":...}
+        回傳 List[dict], 每個 dict = {"uid":..., "text":..., "score":...}
         """
         if not self.qdrant_store:
             logger.error("Qdrant store not initialized.")
@@ -121,9 +121,9 @@ class VectorStoreManager:
         results = []
         for doc, score in hits:
             if doc.metadata.get("domain") == domain:
-                doc_id = doc.metadata.get("doc_id", "")
+                uid = doc.metadata.get("uid", "")
                 results.append({
-                    "doc_id": doc_id,
+                    "uid": uid,
                     "text": doc.page_content,
                     "score": score
                 })
@@ -131,8 +131,8 @@ class VectorStoreManager:
         return results
 
     # 以下為尚未實作，PoC:
-    def update_document(self, domain: str, doc_id: str, new_content: str):
+    def update_document(self, domain: str, uid: str, new_content: str):
         logger.warning("update_document not implemented")
 
-    def remove_document(self, domain: str, doc_id: str):
+    def remove_document(self, domain: str, uid: str):
         logger.warning("remove_document not implemented")
