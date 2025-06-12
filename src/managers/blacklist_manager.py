@@ -12,7 +12,7 @@ import onnxruntime as rt
 
 LINE_RE_LIST = [
     {'re': "(lineid)([^@])?([@]?[a-z0-9-_+]{4,})", 'idx': 2},
-    {'re': "(line).+(id|帳號)([^@a-z0-9])?([@]?[a-z0-9-_+*]{4,})", 'idx': 3}
+    {'re': "(line).+?(id|帳號)([^@a-z0-9])?([@]?[a-z0-9-_+*]{4,})", 'idx': 3}
 ]
 URL_RE_LIST = [
     {'re': r"(https?:\/\/|www\.)([^\s\"\-\'\.\/<>]+)\.([a-zA-Z0-9\.\/#=]+)"}
@@ -88,14 +88,14 @@ class BlacklistManager:
         if lineid_lst:
             for lineid in lineid_lst:
                 if lineid in self.lineid_blacklist:
-                    status = 0      # lineid in blacklist
+                    result = 0      # lineid in blacklist
                 else:
-                    status = 1      # lineid not in blacklist
+                    result = 1      # lineid not in blacklist
                     
                 # Add result to the list
                 lineid_results.append({
                     "id": lineid,
-                    "status": status,
+                    "result": result,
                     "source": "dataset"
                 })
             
@@ -257,7 +257,7 @@ class BlacklistManager:
             
             return {
                 "status": 1,
-                "result": pred_label,
+                "result": int(pred_label),
                 "scam_probability": pred_prob_bad,
                 "level": scam_level
             }
